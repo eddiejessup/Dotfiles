@@ -1,0 +1,35 @@
+#! /usr/bin/env python3
+
+import json
+import html
+import sys
+
+import requests
+
+if len(sys.argv) > 2:
+    sys.exit('Too many args')
+elif len(sys.argv) == 2:
+    tag = sys.argv[1]
+else:
+    tag = '*'
+
+
+def present_note(info):
+    s = html.unescape('{}: {}'.format(
+            info['fields']['Front']['value'],
+            info['fields']['Back']['value'],
+    ))
+    tag_str = ', '.join('@' + t for t in info['tags'] if t != tag)
+    return '{} {}'.format(tag_str, s) if tag_str else s
+
+
+def invoke(action, **params):
+    resp = requests.post(
+        'http://localhost:8765',
+        json={'action': action, 'params': params, 'version': 6},
+    )
+    return json.loads(resp.content)['result']
+
+shortc_note_ids = invoke('findNotes', query='deck:Shortcuts tag:{}'.format(tag))
+shortc_note_infos = invoke('notesInfo', notes=shortc_note_ids)
+print('\n'.join(map(present_note, shortc_note_infos)))

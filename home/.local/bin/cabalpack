@@ -1,0 +1,2 @@
+hpack package.yaml
+cabal "$@"
