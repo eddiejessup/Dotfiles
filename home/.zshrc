@@ -1,3 +1,20 @@
+# *** Uncomment this and some more at the file's end to enable profiling. ***
+
+# ZSH_DISABLE_COMPFIX="true"
+
+# zmodload zsh/datetime
+# setopt PROMPT_SUBST
+# PS4='+$EPOCHREALTIME %N:%i> '
+
+# logfile=$(mktemp zsh_profile.XXXXXXXX)
+# echo "Logging to $logfile"
+# exec 3>&2 2>$logfile
+
+# setopt XTRACE
+
+# *** ***
+
+
 # Helpers for this script.
 function command_exists () {
   type "$1" &> /dev/null
@@ -30,7 +47,9 @@ path+=(
   ~/elmo/src/ddlog/bin
   ~/elmo/bin
   ~/.homesick/repos/homeshick/completions
+  ~/.ebcli-virtual-env/executables  # Elastic beanstalk CLI
 )
+
 if [[ $on_mac = 1 ]]; then
   path+=(
     /Applications/Sublime\ Text.app/Contents/SharedSupport/bin
@@ -41,10 +60,6 @@ fi
 if command_exists go; then
   path+="$(go env GOPATH)/bin"
 fi
-
-
-export HOMESHICK_DIR=/usr/local/opt/homeshick
-source "/usr/local/opt/homeshick/homeshick.sh"
 
 # ---
 # --- Configure Zsh itself
@@ -60,7 +75,14 @@ setopt auto_cd
 # alias expansion. The -z means use zsh (rather than ksh) style.
 # Q. What does compinit do?
 # A. It initializes completion.
-autoload -Uz compinit; compinit;
+# autoload -Uz compinit
+# Only do it once per day, because it's slow:
+# https://gist.github.com/ctechols/ca1035271ad134841284#gistcomment-2308206
+for dump in ~/.zcompdump(N.mh+24); do
+  autoload -Uz compinit
+  compinit
+done
+# compinit -C
 
 # - _complete: the basic completer.
 # - _expand_alias: can be used both as a completer and as a bindable command.
@@ -69,9 +91,6 @@ autoload -Uz compinit; compinit;
 #   ‘true’, regular aliases will be expanded, but only in command position
 zstyle ':completion:*' completer _expand_alias _complete
 zstyle ':completion:*' regular true
-
-# https://github.com/zsh-users/zsh-autosuggestions/#disabling-suggestion-for-large-buffers
-export ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE="20"
 
 # ---
 # --- Zinit
@@ -83,30 +102,25 @@ autoload -Uz _zinit
 (( ${+_comps} )) && _comps[zinit]=_zinit
 # End of Zinit installer's chunk
 
-# Fish-like fast/unobtrusive autosuggestions for zsh.
-# It suggests commands as you type based on history and completions.
-zinit light zsh-users/zsh-autosuggestions
-
 # Fish-like history search, where you type in any part of any command from
 # history and then press up and down to browse matches.
-zinit light zsh-users/zsh-history-substring-search
+# Don't add 'wait' as this messes up search for the first prompt.
+zinit ice lucid
+zinit load zsh-users/zsh-history-substring-search
 bindkey '^[[A' history-substring-search-up
 bindkey '^[[B' history-substring-search-down
-
-# Feature-rich syntax highlighting
-zinit light zdharma/fast-syntax-highlighting
 
 # Bind Ctrl-R to a widget that searches for multiple keywords in AND fashion.
 # So you enter multiple words, and entries that match all of them are returned.
 # The entries are syntax highlighted.
-zinit light zdharma/history-search-multi-word
+zinit ice wait lucid
+zinit load zdharma/history-search-multi-word
 
-zinit ice pick"/dev/null" multisrc"{async,pure}.zsh" \ atload'!prompt_pure_precmd' nocd
-zinit light sindresorhus/pure
+zinit ice wait lucid
+zinit load peterhurford/git-it-on.zsh
 
-zinit light peterhurford/git-it-on.zsh
-
-zinit light mollifier/cd-gitroot
+zinit ice wait lucid
+zinit load mollifier/cd-gitroot
 alias cdu='cd-gitroot'
 
 # Taken from PR: https://github.com/ohmyzsh/ohmyzsh/pull/4420
@@ -125,51 +139,75 @@ function git_current_branch() {
   fi
   echo ${ref#refs/heads/}
 }
+zinit ice wait lucid atload'!unalias gcm'
 zinit snippet OMZ::plugins/git/git.plugin.zsh
 
 # CLI GUI to help you use git more efficiently.
-zinit light wfxr/forgit
+# zinit ice wait lucid
+# zinit load wfxr/forgit
 
 # Provide a man wrapper function to color manpages.
-zinit light ael-code/zsh-colored-man-pages
+zinit ice wait lucid
+zinit load ael-code/zsh-colored-man-pages
 
 
 # Use fzf to tab-complete cd's argument.
-zinit light changyuheng/zsh-interactive-cd
+zinit ice wait lucid
+zinit load changyuheng/zsh-interactive-cd
+
+# fast-syntax-highlighting: Feature-rich syntax highlighting
+# zsh-autosuggestions: Fish-like fast/unobtrusive autosuggestions for zsh. Suggest commands as you type based on history and completions.
+zinit wait lucid for \
+ atinit"ZINIT[COMPINIT_OPTS]=-C; zicompinit; zicdreplay" \
+    zdharma/fast-syntax-highlighting \
+ blockf \
+    zsh-users/zsh-completions \
+ atload"!_zsh_autosuggest_start" \
+    zsh-users/zsh-autosuggestions
+# https://github.com/zsh-users/zsh-autosuggestions/#disabling-suggestion-for-large-buffers
+export ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE="20"
+
+zinit ice pick"/dev/null" multisrc"{async,pure}.zsh" \ atload'!prompt_pure_precmd' nocd
+zinit load sindresorhus/pure
+# Load the pure theme, with zsh-async library that's bundled with it.
 
 # ---
 # --- Configuration of tools
 # ---
 
 # /// fasd ///
-eval "$(fasd --init auto)"
+zinit snippet OMZ::plugins/fasd/fasd.plugin.zsh
+# eval "$(fasd --init auto)"
+
 alias sfe="sf -e $EDITOR_ASYNC"
 alias de="d -e $EDITOR_ASYNC"
-bindkey '^X^A' fasd-complete    # C-x C-a to do fasd-complete (files and directories)
-bindkey '^X^F' fasd-complete-f  # C-x C-f to do fasd-complete-f (only files)
-bindkey '^X^D' fasd-complete-d  # C-x C-d to do fasd-complete-d (only directories)
+# bindkey '^X^A' fasd-complete    # C-x C-a to do fasd-complete (files and directories)
+# bindkey '^X^F' fasd-complete-f  # C-x C-f to do fasd-complete-f (only files)
+# bindkey '^X^D' fasd-complete-d  # C-x C-d to do fasd-complete-d (only directories)
 
 # Tab-complete fasd's 'z' using fzf.
-zinit light wookayin/fzf-fasd
+zinit ice wait lucid
+zinit load wookayin/fzf-fasd
 
 # Press <CTRL-g> to list relevant directories. You can type to filter the list.
 # Select one to insert it into the command line. If you started with an
 # empty command line, and have enabled the zsh option AUTO_CD, you'll change to
 # that directory instantly.
 # # z / fzf (ctrl-g)
-zinit light andrewferrier/fzf-z
+zinit ice wait lucid
+zinit load andrewferrier/fzf-z
 # Use 'fasd' instead of 'z'.
 FZFZ_RECENT_DIRS_TOOL=fasd
 
-unalias z
-# Change directory with fasd & fzf:
-# - If given arguments, jump using `fasd`
-# - Otherwise, filter output of `fasd` using `fzf`
-function z() {
-    [ $# -gt 0 ] && fasd_cd -d "$*" && return
-    local dir
-    dir="$(fasd -Rdl "$1" | fzf -1 -0 --no-sort --no-multi)" && cd "${dir}" || return 1
-}
+# unalias z
+# # Change directory with fasd & fzf:
+# # - If given arguments, jump using `fasd`
+# # - Otherwise, filter output of `fasd` using `fzf`
+# function z() {
+#     [ $# -gt 0 ] && fasd_cd -d "$*" && return
+#     local dir
+#     dir="$(fasd -Rdl "$1" | fzf -1 -0 --no-sort --no-multi)" && cd "${dir}" || return 1
+# }
 
 # /// bat ///
 
@@ -236,7 +274,7 @@ function mnt () {
 }
 
 function ghcl () {
-    gcl https://github.com/$1/$2.git
+    git clone https://github.com/$1/$2.git
 }
 
 # ---
@@ -290,7 +328,6 @@ alias gclazy='git commit -m"Update"'
 alias grm='git rebase master'
 alias gl='glo'
 alias gap='git add --patch'
-alias gcm='git commit -m'
 alias gcom='git checkout master'
 
 # # Configuration.
@@ -319,9 +356,19 @@ fi
 # --- Programs to maybe run.
 # ---
 
-echo "gitit: open current folder on github"
+# echo "gitit: open current folder on github"
 
-echo "cd-gitroot, or cdu: go to git root"
+# echo "cd-gitroot, or cdu: go to git root"
 
 # Check dotfiles are up to date.
-homeshick --quiet refresh
+export HOMESHICK_DIR=/usr/local/opt/homeshick
+source "/usr/local/opt/homeshick/homeshick.sh"
+# homeshick --quiet refresh
+
+# *** Uncomment this and some more at the file's start to enable profiling. ***
+
+# unsetopt XTRACE
+# exec 2>&3 3>&-
+
+# *** ***
+if [ -e /Users/elliotmarsden/.nix-profile/etc/profile.d/nix.sh ]; then . /Users/elliotmarsden/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
