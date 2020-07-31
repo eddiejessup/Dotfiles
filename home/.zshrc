@@ -30,10 +30,10 @@ if [[ $on_ssh = 1 ]]; then
   export VISUAL='vim'
   export EDITOR_ASYNC=$EDITOR
 else
-  export EDITOR='subl -w'
-  export VISUAL='subl -w'
+  export EDITOR='code -w'
+  export VISUAL='code -w'
   # Want to be able to edit a file in the background.
-  export EDITOR_ASYNC='subl'
+  export EDITOR_ASYNC='code'
 fi
 export PAGER='less'
 
@@ -60,6 +60,12 @@ fi
 if command_exists go; then
   path+="$(go env GOPATH)/bin"
 fi
+
+
+export HOMESHICK_DIR=$HOME/.homesick/repos/homeshick
+source "$HOME/.homesick/repos/homeshick/homeshick.sh"
+# export HOMESHICK_DIR=/usr/local/opt/homeshick
+# source "/usr/local/opt/homeshick/homeshick.sh"
 
 # ---
 # --- Configure Zsh itself
@@ -289,10 +295,13 @@ alias -g me="elliot.marsden@gmail.com"
 alias -g v="bat --wrap=never"
 alias -g wl="wc -l"
 #   ls.
-alias ls="exa"
-alias l="exa -1"
-alias la="exa -a"
-alias ll="exa --long"
+alias l="ls -1G"
+alias la="l -a"
+alias ll="l -alh"
+# alias ls="exa"
+# alias l="exa -1"
+# alias la="exa -a"
+# alias ll="exa --long"
 #   / ls.
 alias tree="exa --tree"
 alias md="mkdir -p"
@@ -348,6 +357,11 @@ else
     alias sfo="sf -e xdg-open"
 fi
 
+# Nix.
+if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
+  source "$HOME/.nix-profile/etc/profile.d/nix.sh"
+fi
+
 if [[ -s "${ZDOTDIR:-$HOME}/.zshrc.local" ]]; then
   source "${ZDOTDIR:-$HOME}/.zshrc.local"
 fi
@@ -361,9 +375,7 @@ fi
 # echo "cd-gitroot, or cdu: go to git root"
 
 # Check dotfiles are up to date.
-export HOMESHICK_DIR=/usr/local/opt/homeshick
-source "/usr/local/opt/homeshick/homeshick.sh"
-# homeshick --quiet refresh
+homeshick --quiet refresh
 
 # *** Uncomment this and some more at the file's start to enable profiling. ***
 
@@ -371,4 +383,3 @@ source "/usr/local/opt/homeshick/homeshick.sh"
 # exec 2>&3 3>&-
 
 # *** ***
-if [ -e /Users/elliotmarsden/.nix-profile/etc/profile.d/nix.sh ]; then . /Users/elliotmarsden/.nix-profile/etc/profile.d/nix.sh; fi # added by Nix installer
