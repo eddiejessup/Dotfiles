@@ -1,6 +1,6 @@
 [user]
 	name = Elliot Marsden
-	email = elliot.marsden@habito.com
+	email = elliot.marsden@gmail.com
 [filter "lfs"]
 	required = true
 	clean = git-lfs clean -- %f
