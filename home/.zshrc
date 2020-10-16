@@ -90,6 +90,17 @@ for dump in ~/.zcompdump(N.mh+24); do
 done
 # compinit -C
 
+autoload -z edit-command-line
+zle -N edit-command-line
+bindkey "^X^E" edit-command-line
+bindkey "^X^X" edit-command-line
+
+# History.
+# Appends every command to the history file once it is executed
+setopt inc_append_history
+# Reloads the history whenever you use it
+setopt share_history
+
 # - _complete: the basic completer.
 # - _expand_alias: can be used both as a completer and as a bindable command.
 #   It expands the word the cursor is on if it is an alias.
@@ -128,25 +139,6 @@ zinit load peterhurford/git-it-on.zsh
 zinit ice wait lucid
 zinit load mollifier/cd-gitroot
 alias cdu='cd-gitroot'
-
-# Taken from PR: https://github.com/ohmyzsh/ohmyzsh/pull/4420
-# Implicitly used by OMZ git plugin.
-# Outputs the name of the current branch
-# Usage example: git pull origin $(git_current_branch)
-# Using '--quiet' with 'symbolic-ref' will not cause a fatal error (128) if
-# it's not a symbolic ref, but in a Git repo.
-function git_current_branch() {
-  local ref
-  ref=$(command git symbolic-ref --quiet HEAD 2> /dev/null)
-  local ret=$?
-  if [[ $ret != 0 ]]; then
-    [[ $ret == 128 ]] && return  # no git repo.
-    ref=$(command git rev-parse --short HEAD 2> /dev/null) || return
-  fi
-  echo ${ref#refs/heads/}
-}
-zinit ice wait lucid atload'!unalias gcm'
-zinit snippet OMZ::plugins/git/git.plugin.zsh
 
 # CLI GUI to help you use git more efficiently.
 # zinit ice wait lucid
@@ -279,10 +271,6 @@ function mnt () {
     sshfs -o follow_symlinks,reconnect,ServerAliveInterval=15,ServerAliveCountMax=3 $1 $2
 }
 
-function ghcl () {
-    git clone https://github.com/$1/$2.git
-}
-
 # ---
 # --- Aliases
 # ---
@@ -303,7 +291,6 @@ alias ll="l -alh"
 # alias la="exa -a"
 # alias ll="exa --long"
 #   / ls.
-alias tree="exa --tree"
 alias md="mkdir -p"
 alias cpr="cp -R"
 alias e="$EDITOR_ASYNC"
@@ -334,10 +321,30 @@ alias sai="sudo apt install"
 alias gs="git status"
 alias gig="e .gitignore"
 alias gclazy='git commit -m"Update"'
+alias gr='git rebase'
 alias grm='git rebase master'
-alias gl='glo'
+alias gl='git log'
 alias gap='git add --patch'
 alias gcom='git checkout master'
+alias gfm='git pull'
+alias gfr='git pull --rebase'
+alias gc='git commit'
+alias gcm='git commit -m'
+alias gco='git checkout'
+alias ga='git add'
+alias gd='git diff'
+alias gdc='git diff --cached'
+alias gdca='git diff --cached'
+alias gcl='git clone'
+alias gp='git push'
+alias gb='git branch'
+alias gba='git branch --all'
+alias grh='git reset HEAD'
+alias gtp='git stash pop'
+alias gt='git stash'
+alias gts='git stash show'
+alias gtl='git stash list'
+alias gta='git stash apply'
 
 # # Configuration.
 alias zc="e $HOME/.zshrc"
@@ -383,3 +390,5 @@ homeshick --quiet refresh
 # exec 2>&3 3>&-
 
 # *** ***
+
+source /usr/local/bin/virtualenvwrapper.sh

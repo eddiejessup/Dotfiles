@@ -1,0 +1,15 @@
+#! /usr/bin/env bash
+
+files=$(fd --extension "hs")
+
+echo "$files"
+for f in $files; do
+    ormolu \
+        --check-idempotence \
+        --mode inplace \
+        -o '-XCPP' \
+        -o '-XImportQualifiedPost' \
+        -o '-XTypeApplications' \
+        "$f"
+    echo "$f"
+done

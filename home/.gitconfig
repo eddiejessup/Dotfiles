@@ -25,4 +25,14 @@
 [diff-so-fancy]
 	first-run = false
 [push]
-	default = upstream
+	default = current
+[log]
+    date = relative
+[format]
+	pretty = format:%C(yellow)%h %Cblue%>(12)%ad %Cgreen%<(7)%aN%Cred%d %Creset%s
+[pull]
+	rebase = true
+[diff]
+    tool = vscode
+[difftool "vscode"]
+    cmd = code --wait --diff $LOCAL $REMOTE
