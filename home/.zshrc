@@ -48,6 +48,9 @@ path+=(
   ~/elmo/bin
   ~/.homesick/repos/homeshick/completions
   ~/.ebcli-virtual-env/executables  # Elastic beanstalk CLI
+  ~/node/node-v14.3.0-darwin-x64/bin
+  ~/.yarn/bin
+  ~/.config/yarn/global/node_modules/.bin
 )
 
 if [[ $on_mac = 1 ]]; then
@@ -133,21 +136,9 @@ bindkey '^[[B' history-substring-search-down
 zinit ice wait lucid
 zinit load zdharma/history-search-multi-word
 
-zinit ice wait lucid
-zinit load peterhurford/git-it-on.zsh
-
-zinit ice wait lucid
-zinit load mollifier/cd-gitroot
-alias cdu='cd-gitroot'
-
-# CLI GUI to help you use git more efficiently.
-# zinit ice wait lucid
-# zinit load wfxr/forgit
-
 # Provide a man wrapper function to color manpages.
 zinit ice wait lucid
 zinit load ael-code/zsh-colored-man-pages
-
 
 # Use fzf to tab-complete cd's argument.
 zinit ice wait lucid
@@ -283,18 +274,17 @@ alias -g me="elliot.marsden@gmail.com"
 alias -g v="bat --wrap=never"
 alias -g wl="wc -l"
 #   ls.
-alias l="ls -1G"
+alias l="ls -1"
 alias la="l -a"
 alias ll="l -alh"
-# alias ls="exa"
-# alias l="exa -1"
-# alias la="exa -a"
-# alias ll="exa --long"
 #   / ls.
 alias md="mkdir -p"
 alias cpr="cp -R"
 alias e="$EDITOR_ASYNC"
 alias ee="e . &"
+alias d="nvim"
+alias dc="d ~/.config/nvim/init.vim"
+alias vim=nvim
 alias tm="tmux"
 alias tma="tmux a"
 alias chux="chmod u+x"
@@ -305,6 +295,8 @@ alias "..."="cd ../.."
 alias -- -="cd -"
 
 # Python.
+# This choice is explained at https://adamj.eu/tech/2020/02/25/use-python-m-pip-everywhere/
+alias pip='python -m pip'
 alias py="python"
 alias ipy="ipython"
 alias wo="workon"
@@ -324,14 +316,16 @@ alias gclazy='git commit -m"Update"'
 alias gr='git rebase'
 alias grm='git rebase master'
 alias gl='git log'
-alias gap='git add --patch'
 alias gcom='git checkout master'
 alias gfm='git pull'
 alias gfr='git pull --rebase'
 alias gc='git commit'
 alias gcm='git commit -m'
 alias gco='git checkout'
-alias ga='git add'
+function ga {
+  git add "$@" && gs
+}
+alias gap='git add --patch'
 alias gd='git diff'
 alias gdc='git diff --cached'
 alias gdca='git diff --cached'
@@ -345,10 +339,24 @@ alias gt='git stash'
 alias gts='git stash show'
 alias gtl='git stash list'
 alias gta='git stash apply'
+alias grv='git remote -v'
 
-# # Configuration.
+# Configuration.
 alias zc="e $HOME/.zshrc"
 alias zr="source $HOME/.zshrc"
+alias vc="d $HOME/.config/nvim/init.vim"
+
+# Notes.
+function nn {
+    title=$1
+    datestr=$(date -u +"%Y-%m-%d")
+    pth=~/elmo/notes/$datestr-$1.md
+    echo $title, $datestr, $pth
+    if [[ ! -f "$pth" ]]; then
+        echo "# $title\n\n" >> "$pth"
+    fi
+    d -c "+3" $pth
+}
 
 if [[ $on_mac = 1 ]]; then
     alias o="open"
@@ -391,4 +399,14 @@ homeshick --quiet refresh
 
 # *** ***
 
-source /usr/local/bin/virtualenvwrapper.sh
+export CLICOLOR=1
+
+export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
+
+export PATH="$HOME/.pyenv/bin:$PATH"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+
+[ -f "~/.ghcup/env" ] && source "~/.ghcup/env"
+
+[ -f "~/.zshrc.local" ] && source "~/.zshrc.local"

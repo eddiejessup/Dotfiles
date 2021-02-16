@@ -28,8 +28,9 @@
 	default = current
 [log]
     date = relative
+	follow = true
 [format]
-	pretty = format:%C(yellow)%h %Cblue%>(12)%ad %Cgreen%<(7)%aN%Cred%d %Creset%s
+	pretty = format:%C(yellow)%h %Cblue%>(12)%aD %Cgreen%<(7)%aN%Cred%d %Creset%s
 [pull]
 	rebase = true
 [diff]
