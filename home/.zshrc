@@ -1,26 +1,13 @@
-# *** Uncomment this and some more at the file's end to enable profiling. ***
-
-# ZSH_DISABLE_COMPFIX="true"
-
-# zmodload zsh/datetime
-# setopt PROMPT_SUBST
-# PS4='+$EPOCHREALTIME %N:%i> '
-
-# logfile=$(mktemp zsh_profile.XXXXXXXX)
-# echo "Logging to $logfile"
-# exec 3>&2 2>$logfile
-
-# setopt XTRACE
-
-# *** ***
-
-
 # Helpers for this script.
 function command_exists () {
   type "$1" &> /dev/null
 }
 
-# Am I on a mac?
+function source_if_exists () {
+  [[ -s "$1" ]] && source "$1"
+}
+
+# Am I on a Mac?
 [[ $OSTYPE == darwin* ]] && on_mac=1 || on_mac=0
 # Am I on an SSH connection?
 [[ -n $SSH_CONNECTION ]] && on_ssh=1 || on_ssh=0
@@ -30,32 +17,37 @@ if [[ $on_ssh = 1 ]]; then
   export VISUAL='vim'
   export EDITOR_ASYNC=$EDITOR
 else
-  export EDITOR='code -w'
-  export VISUAL='code -w'
-  # Want to be able to edit a file in the background.
-  export EDITOR_ASYNC='code'
+  export EDITOR='nvim'
+  export VISUAL='nvim'
+  export EDITOR_ASYNC=$EDITOR
+  # export EDITOR='code -w'
+  # export VISUAL='code -w'
+  # # Want to be able to edit a file in the background.
+  # export EDITOR_ASYNC='code'
 fi
-export PAGER='less'
+
+export CLICOLOR=1
+
+export HOMESHICK_DIR=$HOME/.homesick/repos/homeshick
 
 path+=(
-  ~/.cargo/bin
-  ~/.cabal/bin
-  ~/.local/bin
-  ~/.fzf/bin
-  ~/projects/hex/support
-  ~/.gem/ruby/2.3.0/bin
-  ~/elmo/src/ddlog/bin
-  ~/elmo/bin
-  ~/.homesick/repos/homeshick/completions
-  ~/.ebcli-virtual-env/executables  # Elastic beanstalk CLI
-  ~/node/node-v14.3.0-darwin-x64/bin
-  ~/.yarn/bin
-  ~/.config/yarn/global/node_modules/.bin
+  $HOME/.cargo/bin
+  $HOME/.cabal/bin
+  $HOME/.local/bin
+  $HOME/.fzf/bin
+  $HOME/elmo/bin
+  $HOME/.yarn/bin
+  $HOME/.config/yarn/global/node_modules/.bin
+  $HOME/.pyenv/bin
+  /usr/local/opt/fzf/bin
+)
+
+fpath+=(
+  $HOME/.homesick/repos/homeshick/completions
 )
 
 if [[ $on_mac = 1 ]]; then
   path+=(
-    /Applications/Sublime\ Text.app/Contents/SharedSupport/bin
     /Library/TeX/texbin
   )
 fi
@@ -64,192 +56,134 @@ if command_exists go; then
   path+="$(go env GOPATH)/bin"
 fi
 
-
-export HOMESHICK_DIR=$HOME/.homesick/repos/homeshick
-source "$HOME/.homesick/repos/homeshick/homeshick.sh"
-# export HOMESHICK_DIR=/usr/local/opt/homeshick
-# source "/usr/local/opt/homeshick/homeshick.sh"
-
 # ---
 # --- Configure Zsh itself
 # ---
 
+# History
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=50000
+SAVEHIST=10000
+setopt extended_history
+setopt hist_expire_dups_first
+setopt hist_ignore_dups
+setopt hist_ignore_space
+# Append every command to the history file once it is executed
+setopt inc_append_history
+# Reload the history whenever you use it
+setopt share_history
+
+# Changing directories
 setopt auto_cd
-# Q. What is autoload?
-# A. Functions are called in the same way as any other command. There can be a
-# name conflict between a program and a function. autoload marks a name as
-# being a function rather than an external program.
-# Q. What are those arguments?
-# A. The -U means mark the function 'vcs_info' for autoloading and suppress
-# alias expansion. The -z means use zsh (rather than ksh) style.
-# Q. What does compinit do?
-# A. It initializes completion.
-# autoload -Uz compinit
-# Only do it once per day, because it's slow:
-# https://gist.github.com/ctechols/ca1035271ad134841284#gistcomment-2308206
-for dump in ~/.zcompdump(N.mh+24); do
-  autoload -Uz compinit
-  compinit
-done
-# compinit -C
+setopt auto_pushd
+unsetopt pushd_ignore_dups
+setopt pushdminus
+
+# Completion
+setopt auto_menu
+setopt always_to_end
+setopt complete_in_word
+unsetopt flow_control
+unsetopt menu_complete
+zstyle ':completion:*:*:*:*:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z-_}={A-Za-z_-}' 'r:|=*' 'l:|=* r:|=*'
+zstyle ':completion::complete:*' use-cache 1
+zstyle ':completion::complete:*' cache-path $ZSH_CACHE_DIR
+zstyle ':completion:*' list-colors ''
+zstyle ':completion:*:*:kill:*:processes' list-colors '=(#b) #([0-9]#) ([0-9a-z-]#)*=01;34=0=01'
+
+# Other
+setopt prompt_subst
 
 autoload -z edit-command-line
 zle -N edit-command-line
-bindkey "^X^E" edit-command-line
 bindkey "^X^X" edit-command-line
 
-# History.
-# Appends every command to the history file once it is executed
-setopt inc_append_history
-# Reloads the history whenever you use it
-setopt share_history
+# # ---
+# # --- ZPlug
+# # ---
 
-# - _complete: the basic completer.
-# - _expand_alias: can be used both as a completer and as a bindable command.
-#   It expands the word the cursor is on if it is an alias.
-# - regular: used by the _expand_alias completer and bindable command. If
-#   ‘true’, regular aliases will be expanded, but only in command position
-zstyle ':completion:*' completer _expand_alias _complete
-zstyle ':completion:*' regular true
+# Initialize zplug.
+export ZPLUG_HOME=/usr/local/opt/zplug
+source "$ZPLUG_HOME/init.zsh"
 
-# ---
-# --- Zinit
-# ---
+# List plugins.
 
-# Added by Zinit's installer
-source ~/.zinit/bin/zinit.zsh
-autoload -Uz _zinit
-(( ${+_comps} )) && _comps[zinit]=_zinit
-# End of Zinit installer's chunk
+# Add completions for the commands available within apps, with descriptions, triggered with <tab>.
+zplug "zsh-users/zsh-completions"
 
-# Fish-like history search, where you type in any part of any command from
-# history and then press up and down to browse matches.
-# Don't add 'wait' as this messes up search for the first prompt.
-zinit ice lucid
-zinit load zsh-users/zsh-history-substring-search
+# Tab-complete fasd's `z` command using fzf.
+zplug "wookayin/fzf-fasd"
+
+# Prompt.
+zplug "mafredri/zsh-async"
+zplug "sindresorhus/pure", use:pure.zsh, as:theme
+
+zplug "ael-code/zsh-colored-man-pages"
+
+# Use fzf for completion selection.
+# From https://github.com/Aloxaf/fzf-tab:
+# > fzf-tab must be loaded after compinit, but before zsh-autosuggestions or fast-syntax-highlighting
+# From https://github.com/zplug/zplug
+# > If defer >= 2, run after compinit
+zplug "Aloxaf/fzf-tab", defer:2
+
+# Suggest previously run commands as you type, based on history and completions.
+zplug "zsh-users/zsh-autosuggestions", defer:3
+
+# Color commands as you type them, making errors easy to spot.
+zplug "zsh-users/zsh-syntax-highlighting", defer:3
+
+# Search through history entries that contain the input string anywhere, rather than with the exact prefix.
+zplug "zsh-users/zsh-history-substring-search", defer:3
+
+# Install plugins if some plugins haven't been installed.
+if ! zplug check --verbose; then
+  printf "Install? [y/N]: "
+  if read -q; then echo; zplug install; fi
+fi
+
+# Load zplug
+zplug load
+
+# Configure: zsh-history-substring-search
+# Key bindings.
 bindkey '^[[A' history-substring-search-up
 bindkey '^[[B' history-substring-search-down
 
-# Bind Ctrl-R to a widget that searches for multiple keywords in AND fashion.
-# So you enter multiple words, and entries that match all of them are returned.
-# The entries are syntax highlighted.
-zinit ice wait lucid
-zinit load zdharma/history-search-multi-word
-
-# Provide a man wrapper function to color manpages.
-zinit ice wait lucid
-zinit load ael-code/zsh-colored-man-pages
-
-# Use fzf to tab-complete cd's argument.
-zinit ice wait lucid
-zinit load changyuheng/zsh-interactive-cd
-
-# fast-syntax-highlighting: Feature-rich syntax highlighting
-# zsh-autosuggestions: Fish-like fast/unobtrusive autosuggestions for zsh. Suggest commands as you type based on history and completions.
-zinit wait lucid for \
- atinit"ZINIT[COMPINIT_OPTS]=-C; zicompinit; zicdreplay" \
-    zdharma/fast-syntax-highlighting \
- blockf \
-    zsh-users/zsh-completions \
- atload"!_zsh_autosuggest_start" \
-    zsh-users/zsh-autosuggestions
+# Configure: zsh-autosuggestions
 # https://github.com/zsh-users/zsh-autosuggestions/#disabling-suggestion-for-large-buffers
 export ZSH_AUTOSUGGEST_BUFFER_MAX_SIZE="20"
 
-zinit ice pick"/dev/null" multisrc"{async,pure}.zsh" \ atload'!prompt_pure_precmd' nocd
-zinit load sindresorhus/pure
-# Load the pure theme, with zsh-async library that's bundled with it.
+# Configure: pure prompt.
+autoload -U promptinit; promptinit
+prompt pure
 
-# ---
-# --- Configuration of tools
-# ---
+
+# # ---
+# # --- Configure tools
+# # ---
 
 # /// fasd ///
-zinit snippet OMZ::plugins/fasd/fasd.plugin.zsh
-# eval "$(fasd --init auto)"
-
-alias sfe="sf -e $EDITOR_ASYNC"
-alias de="d -e $EDITOR_ASYNC"
-# bindkey '^X^A' fasd-complete    # C-x C-a to do fasd-complete (files and directories)
-# bindkey '^X^F' fasd-complete-f  # C-x C-f to do fasd-complete-f (only files)
-# bindkey '^X^D' fasd-complete-d  # C-x C-d to do fasd-complete-d (only directories)
-
-# Tab-complete fasd's 'z' using fzf.
-zinit ice wait lucid
-zinit load wookayin/fzf-fasd
-
-# Press <CTRL-g> to list relevant directories. You can type to filter the list.
-# Select one to insert it into the command line. If you started with an
-# empty command line, and have enabled the zsh option AUTO_CD, you'll change to
-# that directory instantly.
-# # z / fzf (ctrl-g)
-zinit ice wait lucid
-zinit load andrewferrier/fzf-z
-# Use 'fasd' instead of 'z'.
-FZFZ_RECENT_DIRS_TOOL=fasd
-
-# unalias z
-# # Change directory with fasd & fzf:
-# # - If given arguments, jump using `fasd`
-# # - Otherwise, filter output of `fasd` using `fzf`
-# function z() {
-#     [ $# -gt 0 ] && fasd_cd -d "$*" && return
-#     local dir
-#     dir="$(fasd -Rdl "$1" | fzf -1 -0 --no-sort --no-multi)" && cd "${dir}" || return 1
-# }
+eval "$(fasd --init auto)"
 
 # /// bat ///
+export BAT_STYLE="numbers,changes"
 
-export BAT_STYLE="changes"
-
-# /// fzf ///
-
-[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-export FZF_COMPLETION_TRIGGER='~~'
-
-function fzfe() {
-    fzf --bind 'enter:execute($EDITOR_ASYNC {})'
-}
-function fzfh() {
-    FZF_DEFAULT_COMMAND='fd -H' fzfe
-}
-
-function fzfu() {
-    local match
-    # -1: If one match, select it.
-    # -0: Exit if no matches.
-    # --no-multi: disable multi-select.
-    # -i: Case insensitive.
-    match=$(fzf -1 -0 -i --no-sort --no-multi) || return 1
-    # Escape to play nicely as a path argument.
-    echo "$match"
-}
-
-# fe [FUZZY PATTERN] - Open the selected file with the default editor
-#   - Bypass fuzzy finder if there's only one match (--select-1)
-#   - Exit if there's no match (--exit-0)
-function fe() {
-  local files
-  files=($(fzf --query="$1"))
-  [[ -n "$files" ]] && $EDITOR_ASYNC "${files[@]}"
-}
-
-function fz_func() {fasd -Rfl "$1" | fzfu }
-function az_func() {fasd -Ral "$1" | fzfu }
-function dz_func() {fasd -Rdl "$1" | fzfu }
-alias -g fz='"$(fz_func)"'
-alias -g az='"$(az_func)"'
-alias -g dz='"$(dz_func)"'
-
-# /// iTerm2 ///
-
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+# # /// fzf ///
+# Auto-completion
+source "/usr/local/opt/fzf/shell/completion.zsh"
+# Key bindings
+source "/usr/local/opt/fzf/shell/key-bindings.zsh"
+export FZF_COMPLETION_OPTS='--preview "bat --style=changes --color=always --line-range :100 {}"'
+export FZF_CTRL_T_OPTS="$FZF_COMPLETION_OPTS"
+# Use `fd` as the default source for fzf
+export FZF_DEFAULT_COMMAND='fd --type f'
+export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 
 # ---
 # --- Functions, bindings and helpers
 # ---
-
-bindkey "^Xa" _expand_alias
 
 function mnt () {
     # Unmount directory in case it's already mounted, ignoring the error output
@@ -283,14 +217,11 @@ alias cpr="cp -R"
 alias e="$EDITOR_ASYNC"
 alias ee="e . &"
 alias d="nvim"
-alias dc="d ~/.config/nvim/init.vim"
-alias vim=nvim
+alias dc="d $HOME/.config/nvim/init.vim"
 alias tm="tmux"
 alias tma="tmux a"
 alias chux="chmod u+x"
 alias rd="rmdir"
-alias ex="export"
-alias us="unset"
 alias "..."="cd ../.."
 alias -- -="cd -"
 
@@ -299,8 +230,8 @@ alias -- -="cd -"
 alias pip='python -m pip'
 alias py="python"
 alias ipy="ipython"
-alias wo="workon"
-alias nb="jupyter notebook --ip=\* --port=8080"
+alias wo="pyenv activate"
+alias de="source deactivate"
 alias pi="pip install"
 
 # Yarn.
@@ -322,12 +253,10 @@ alias gfr='git pull --rebase'
 alias gc='git commit'
 alias gcm='git commit -m'
 alias gco='git checkout'
-function ga {
-  git add "$@" && gs
-}
-alias gap='git add --patch'
+# Show status after doing an `add`.
+function ga { git add "$@" && gs }
+alias gap='ga --patch'
 alias gd='git diff'
-alias gdc='git diff --cached'
 alias gdca='git diff --cached'
 alias gcl='git clone'
 alias gp='git push'
@@ -350,7 +279,7 @@ alias vc="d $HOME/.config/nvim/init.vim"
 function nn {
     title=$1
     datestr=$(date -u +"%Y-%m-%d")
-    pth=~/elmo/notes/$datestr-$1.md
+    pth=$HOME/elmo/notes/$datestr-$1.md
     echo $title, $datestr, $pth
     if [[ ! -f "$pth" ]]; then
         echo "# $title\n\n" >> "$pth"
@@ -372,41 +301,19 @@ else
     alias sfo="sf -e xdg-open"
 fi
 
-# Nix.
-if [ -e "$HOME/.nix-profile/etc/profile.d/nix.sh" ]; then
-  source "$HOME/.nix-profile/etc/profile.d/nix.sh"
-fi
-
-if [[ -s "${ZDOTDIR:-$HOME}/.zshrc.local" ]]; then
-  source "${ZDOTDIR:-$HOME}/.zshrc.local"
-fi
-
-# ---
-# --- Programs to maybe run.
-# ---
-
-# echo "gitit: open current folder on github"
-
-# echo "cd-gitroot, or cdu: go to git root"
+source_if_exists "$HOME/.iterm2_shell_integration.zsh"
+source_if_exists "$HOME/.nix-profile/etc/profile.d/nix.sh"
+source_if_exists "$HOME/.ghcup/env"
+source_if_exists "$HOMESHICK_DIR/homeshick.sh"
 
 # Check dotfiles are up to date.
 homeshick --quiet refresh
 
-# *** Uncomment this and some more at the file's start to enable profiling. ***
-
-# unsetopt XTRACE
-# exec 2>&3 3>&-
-
-# *** ***
-
-export CLICOLOR=1
-
-export PATH="$HOME/.yarn/bin:$HOME/.config/yarn/global/node_modules/.bin:$PATH"
-
-export PATH="$HOME/.pyenv/bin:$PATH"
 eval "$(pyenv init -)"
 eval "$(pyenv virtualenv-init -)"
 
-[ -f "~/.ghcup/env" ] && source "~/.ghcup/env"
+# Source local changes I don't want to track.
+source_if_exists "$HOME/.zshrc.local"
 
-[ -f "~/.zshrc.local" ] && source "~/.zshrc.local"
+autoload bashcompinit && bashcompinit
+complete -C /usr/local/bin/aws_completer aws
