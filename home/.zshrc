@@ -275,17 +275,8 @@ alias zc="e $HOME/.zshrc"
 alias zr="source $HOME/.zshrc"
 alias vc="d $HOME/.config/nvim/init.vim"
 
-# Notes.
-function nn {
-    title=$1
-    datestr=$(date -u +"%Y-%m-%d")
-    pth=$HOME/elmo/notes/$datestr-$1.md
-    echo $title, $datestr, $pth
-    if [[ ! -f "$pth" ]]; then
-        echo "# $title\n\n" >> "$pth"
-    fi
-    d -c "+3" $pth
-}
+# Apps.
+alias skim='/Applications/Skim.app/Contents/MacOS/Skim'
 
 if [[ $on_mac = 1 ]]; then
     alias o="open"

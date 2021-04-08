@@ -1,16 +1,23 @@
 " Yank to clipboard
 set clipboard+=unnamedplus
 
+let mapleader = "'" " Easier leader
+
+inoremap <CR> <Esc>
+" nnoremap <SPACE> :w<cr>
+
 " Don't apply this stuff in VSCode's Neovim mode.
 if !exists('g:vscode')
-    " Meta key re-mapping
-    inoremap jk <ESC> " Easier escape mode
-    let mapleader = "'" " Easier leader
 
     " File management
     noremap <leader>q :q<cr>
-    nnoremap <leader>w :w<cr>
     nnoremap <leader>z :wq<cr>
+
+     " Easier escape mode<Nop>
+    inoremap jk <ESC>
+    inoremap jj <ESC>
+     " Avoid bad habit
+    inoremap <ESC> <Nop>
 
     " Display
     syntax on " Highlight syntax
@@ -33,10 +40,6 @@ if !exists('g:vscode')
     " <C-l> normally redraws the screen. Prepend 'nohlsearch' to clear the
     " highlighted search results.
     nnoremap <silent> <C-l> :<C-u>nohlsearch<CR><C-l>
-
-    " Spelling
-    nnoremap <leader>s :set spell!<CR>
-    set nospell spelllang=en_us
 
     " Haskell
     let g:haskell_enable_quantification = 1   " Enable highlighting of `forall`
@@ -68,22 +71,19 @@ if !exists('g:vscode')
     Plug 'morhetz/gruvbox'
     Plug 'vim-airline/vim-airline'
     Plug 'vim-airline/vim-airline-themes'
-    " Plug 'airblade/vim-gitgutter'
     Plug 'tpope/vim-commentary'
     Plug 'tpope/vim-surround'
-    " Plug 'tpope/vim-fugitive'
     Plug 'junegunn/fzf'
     Plug 'junegunn/fzf.vim'
-    " Plug 'nathanaelkane/vim-indent-guides'
-    " Plug 'neoclide/coc.nvim', {'branch': 'release'}
-    " Plug 'iamcco/markdown-preview.nvim', { 'do': 'cd app && yarn install'  }
     Plug 'editorconfig/editorconfig-vim'
     Plug 'svermeulen/vim-cutlass'
     " To add when I'm used to the others
+    " Plug 'tpope/vim-fugitive'
     " Plug 'svermeulen/vim-subversive'
     " Plug 'tpope/vim-unimpaired'
     " Plug 'tpope/vim-repeat'
     " Plug 'tpope/vim-sensible'
+    Plug 'easymotion/vim-easymotion'
 
     call plug#end()
 
@@ -91,14 +91,12 @@ if !exists('g:vscode')
     let g:gruvbox_contrast_dark='hard'
     autocmd vimenter * ++nested colorscheme gruvbox
 
-    " runtime coc.vim
-
     " Open new splits to right and bottom: apparently more natural than vim's
     " defaults
     set splitbelow
     set splitright
 
-    let g:netrw_banner = 0
+    " let g:netrw_banner = 0
 
 else " vscode check
 
@@ -111,26 +109,51 @@ else " vscode check
     xmap <C-/> <Plug>VSCodeCommentary
     nmap <C-/> <Plug>VSCodeCommentaryLine
 
+    nnoremap <C-h> <Cmd>call VSCodeNotify('workbench.action.focusLeftGroup')<CR>
+    xnoremap <C-h> <Cmd>call VSCodeNotify('workbench.action.focusLeftGroup')<CR>
+    nnoremap <C-l> <Cmd>call VSCodeNotify('workbench.action.focusRightGroup')<CR>
+    xnoremap <C-l> <Cmd>call VSCodeNotify('workbench.action.focusRightGroup')<CR>
+
     call plug#begin(stdpath('data') . '/plugged')
 
     Plug 'tpope/vim-surround'
     Plug 'svermeulen/vim-cutlass'
+    " Only forked because vim-plug doesn't like multiple repos with the same
+    " name.
+    Plug 'eddiejessup/vim-easymotion-vscode'
 
     call plug#end()
 
 endif " vscode check
+
+" Configure easy-motion.
+let g:EasyMotion_do_mapping = 0 " Disable default mappings
+" nmap s <Plug>(easymotion-f)
+nmap s <Plug>(easymotion-f2)
+" Turn on case-insensitive feature
+let g:EasyMotion_smartcase = 1
+" JK motions: Line motions
+map <Leader>j <Plug>(easymotion-bd-jk)
+" map <Leader>j <Plug>(easymotion-bd-j)
+" map <Leader>k <Plug>(easymotion-k)
+map <Leader>w <Plug>(easymotion-bd-w)
+map <Leader>b <Plug>(easymotion-b)
+
+" Scroll up and down with d/e
+nnoremap <C-e> <C-u>
+nnoremap <C-k> <S-{>
+nnoremap <C-j> <S-}>
+" Unmap brace, to avoid the habit.
+nnoremap { <Nop>
+nnoremap } <Nop>
+
+noremap <Up> <Nop>
+noremap <Down> <Nop>
+noremap <Left> <Nop>
+noremap <Right> <Nop>
 
 " 'Cut' commands, for use with vim-cutlass
 nnoremap m d
 xnoremap m d
 nnoremap mm dd
 nnoremap M D
-
-" Easier window navigation
-nnoremap <C-J> <C-W><C-J>
-nnoremap <C-K> <C-W><C-K>
-nnoremap <C-L> <C-W><C-L>
-nnoremap <C-H> <C-W><C-H>
-
-" Scroll up and down with d/e
-nnoremap <C-e> <C-u>
